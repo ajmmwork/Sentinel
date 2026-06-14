@@ -1,0 +1,21 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+.venv/
+venv/
+.sentinel-env-server/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Frontend dependencies and builds
+node_modules/
+dist/
+
+# macOS
+.DS_Store
+.vscode/

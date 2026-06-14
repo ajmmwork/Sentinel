@@ -1,0 +1,7 @@
+{
+  "venvPath": "dev/server",
+  "venv": ".sentinel-env-server",
+  "extraPaths": [
+    "dev/server"
+  ]
+}
