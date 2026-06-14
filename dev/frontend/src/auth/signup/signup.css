@@ -1,0 +1,226 @@
+.signup-page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(79, 70, 229, 0.28), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(37, 99, 235, 0.2), transparent 30%),
+    linear-gradient(135deg, #050816 0%, #07111f 48%, #020617 100%);
+  overflow: hidden;
+}
+
+.signup-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url("/src/assets/sentinel-money-bot.png");
+  background-position: center;
+  background-size: cover;
+  opacity: 0.58;
+  filter: saturate(1.24) contrast(1.04);
+  transform: scale(1.03);
+}
+
+.signup-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.48) 70%),
+    linear-gradient(135deg, rgba(5, 8, 22, 0.24), rgba(2, 6, 23, 0.66));
+}
+
+.signup-shell {
+  width: 100%;
+  max-width: 520px;
+}
+
+.sentinel-signup-card {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(8, 15, 30, 0.86);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(18px);
+  --card-spacing: 18px;
+}
+
+.sentinel-signup-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.sentinel-signup-name {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.sentinel-signup-tagline {
+  margin: 2px 0 0;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.sentinel-signup-title {
+  color: #f8fafc;
+  font-size: 22px;
+}
+
+.sentinel-signup-description {
+  color: #a3adc2;
+  font-size: 13px;
+}
+
+.sentinel-signup-field {
+  color: #dbeafe;
+  font-size: 13px;
+}
+
+.sentinel-signup-form-group {
+  gap: 12px;
+}
+
+.sentinel-signup-alert {
+  margin-bottom: 12px;
+  border-color: rgba(167, 139, 250, 0.42);
+  color: #e9d5ff;
+  background:
+    linear-gradient(135deg, rgba(76, 29, 149, 0.45), rgba(15, 23, 42, 0.82)),
+    rgba(15, 23, 42, 0.86);
+  box-shadow: 0 14px 32px rgba(76, 29, 149, 0.22);
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 700ms ease,
+    transform 700ms ease;
+}
+
+.sentinel-signup-alert.is-fading {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.sentinel-signup-alert [data-slot="alert-title"] {
+  color: #f5f3ff;
+}
+
+.sentinel-signup-alert [data-slot="alert-description"] {
+  color: #c4b5fd;
+}
+
+.sentinel-signup-success-alert {
+  margin-bottom: 12px;
+  border-color: rgba(34, 197, 94, 0.32);
+  color: #bbf7d0;
+  background:
+    linear-gradient(135deg, rgba(20, 83, 45, 0.44), rgba(15, 23, 42, 0.82)),
+    rgba(15, 23, 42, 0.86);
+  box-shadow: 0 14px 32px rgba(34, 197, 94, 0.14);
+}
+
+.sentinel-signup-success-alert [data-slot="alert-title"] {
+  color: #dcfce7;
+}
+
+.sentinel-signup-success-alert [data-slot="alert-description"] {
+  color: #86efac;
+}
+
+.sentinel-signup-name-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.sentinel-signup-input {
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.72);
+  height: 38px;
+}
+
+.sentinel-signup-input::placeholder {
+  color: #64748b;
+}
+
+.sentinel-signup-input:focus-visible {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+}
+
+.sentinel-signup-description-text {
+  color: #7f8da3;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sentinel-signup-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.28);
+  height: 38px;
+}
+
+.sentinel-signup-primary:hover {
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+}
+
+.sentinel-signup-secondary {
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #dbeafe;
+  background: rgba(15, 23, 42, 0.62);
+  height: 38px;
+}
+
+.sentinel-signup-secondary:hover {
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.82);
+}
+
+.sentinel-signup-link {
+  color: #a78bfa;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sentinel-signup-link:hover {
+  color: #c4b5fd;
+}
+
+.sentinel-signup-signal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #86efac;
+  font-size: 13px;
+}
+
+.sentinel-signup-signal::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.8);
+}
+
+@media (min-width: 768px) {
+  .signup-page {
+    padding: 24px;
+  }
+
+  .sentinel-signup-name-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
