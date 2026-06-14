@@ -19,3 +19,10 @@ dist/
 # macOS
 .DS_Store
 .vscode/
+
+# Local AI tooling
+dev/frontend/.agents/
+dev/frontend/skills-lock.json
+
+# Empty directory placeholders
+.gitkeep
