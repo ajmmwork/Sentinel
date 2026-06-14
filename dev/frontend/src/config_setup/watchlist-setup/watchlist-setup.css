@@ -324,6 +324,15 @@
   box-shadow: 0 0 18px rgba(34, 197, 94, 0.8);
 }
 
+.sentinel-watchlist-signal.has-duplicates {
+  color: #ddd6fe;
+}
+
+.sentinel-watchlist-signal.has-duplicates::before {
+  background: #a78bfa;
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.72);
+}
+
 .sentinel-watchlist-copy {
   margin: 0;
   color: #94a3b8;

@@ -64,7 +64,7 @@ export function LoginForm({
 
       setSuccessMessage(result.data?.message || "Login successful. Redirecting you now.");
       await new Promise((resolve) => setTimeout(resolve, REDIRECT_DELAY_MS));
-      window.location.href = `/model-setup`;
+      window.location.href = `/home`;
     } catch (error) {
       showError("Unable to reach the server. Please try again.");
     } finally {

@@ -8,6 +8,7 @@ from app.db.models.model_provider import ModelProvider
 from app.db.models.model import Model
 from app.db.models.user import User
 from app.db.models.assets import Asset
+from app.db.models.watchlist import Watchlist
 from app.types.SaveApiKeyRequest import SaveApiKeyRequest
 from typing import List
 
@@ -15,7 +16,10 @@ from app.services.stockSymbolSearch import stockSymbolSearch
 router = APIRouter()
 
 @router.get("/providers", status_code=status.HTTP_200_OK)
-def get_providers(db: Session = Depends(get_db)):
+def get_providers(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
 
     available_providers = (
         db.query(
@@ -42,7 +46,11 @@ def get_providers(db: Session = Depends(get_db)):
     }
 
 @router.get("/models", status_code=status.HTTP_200_OK)
-def get_models(provider: int , db: Session = Depends(get_db)):
+def get_models(
+    provider: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
 
     available_models = (
         db.query(Model)
@@ -130,7 +138,11 @@ def save_api_key(
     }
 
 @router.post("/validate-assets", status_code=status.HTTP_200_OK)
-async def validate_assets(assets: List[str], db: Session = Depends(get_db)):
+async def validate_assets(
+    assets: List[str],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if not assets or not any(asset.strip() for asset in assets):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -210,7 +222,7 @@ async def validate_assets(assets: List[str], db: Session = Depends(get_db)):
                 "symbol": symbol,
                 "matches": [
                     {
-                        "company_name": result.company_name,
+                        "name": result.company_name,
                         "exchange": result.exchange,
                         "currency": result.currency,
                     }
@@ -221,3 +233,76 @@ async def validate_assets(assets: List[str], db: Session = Depends(get_db)):
         ],
         "detail": "Asset validation completed.",
     }
+
+
+@router.put("/save-watchlist", status_code=status.HTTP_200_OK)
+async def save_watchlist(
+    payload: List[dict],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not payload or not any(payload):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request is malformed"
+        )
+
+    requested_assets = [
+        {
+            "symbol": asset.get("symbol", "").strip().upper(),
+            "name": asset.get("name", "").strip(),
+            "exchange": asset.get("exchange", "").strip(),
+            "currency": asset.get("currency", "").strip(),
+        }
+        for asset in payload
+        if asset
+    ]
+
+    if not requested_assets or any(
+        not asset["symbol"] or not asset["name"] or not asset["exchange"] or not asset["currency"]
+        for asset in requested_assets
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Every watchlist asset must include symbol, name, exchange, and currency.",
+        )
+
+    requested_asset_keys = {
+        (asset["symbol"], asset["exchange"])
+        for asset in requested_assets
+    }
+
+    existing_assets = (
+        db.query(Asset)
+        .filter(tuple_(Asset.symbol, Asset.exchange).in_(requested_asset_keys))
+        .all()
+    )
+    existing_asset_keys = {
+        (asset.symbol, asset.exchange)
+        for asset in existing_assets
+    }
+
+    missing_asset_keys = requested_asset_keys - existing_asset_keys
+
+    if missing_asset_keys:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more selected assets were not validated. Please validate your watchlist again.",
+        )
+
+    db.query(Watchlist).filter(
+        Watchlist.user_id == current_user.user_id
+    ).delete()
+
+    watchlist_items = [
+        Watchlist(user_id=current_user.user_id, asset_id=asset.asset_id)
+        for asset in existing_assets
+    ]
+
+    db.add_all(watchlist_items)
+    db.commit()
+
+    return {
+        "detail" : "Watchlist saved."
+    }
+    

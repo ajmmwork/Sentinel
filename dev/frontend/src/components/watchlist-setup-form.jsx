@@ -13,9 +13,12 @@ import { useEffect, useRef, useState } from "react";
 import { validate_assets } from "@/utilities/api";
 
 const REDIRECT_DELAY_MS = 3000;
+const WATCHLIST_SLOT_COUNT = 5;
+const WATCHLIST_DRAFT_KEY = "sentinel_watchlist_draft";
+const WATCHLIST_VALIDATED_KEY = "sentinel_validated_watchlist";
 
 export function WatchlistSetupForm() {
-  const [assets, setAssets] = useState(["","","","",""])
+  const [assets, setAssets] = useState(Array(WATCHLIST_SLOT_COUNT).fill(""))
   const [isValidating, setIsValidating] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
@@ -26,7 +29,35 @@ export function WatchlistSetupForm() {
   const fadeTimerRef = useRef(null);
   const messageTimerRef = useRef(null);
   const messageFadeTimerRef = useRef(null);
-  const hasAtLeastOneAsset = assets.some((asset) => asset.trim() !== "");
+  const enteredAssets = assets
+    .map((asset) => asset.trim())
+    .filter(Boolean);
+  const duplicateAssets = enteredAssets.filter(
+    (asset, assetIndex) => enteredAssets.indexOf(asset) !== assetIndex
+  );
+  const hasAtLeastOneAsset = enteredAssets.length > 0;
+  const hasDuplicateAssets = duplicateAssets.length > 0;
+
+  useEffect(() => {
+    const savedDraft = sessionStorage.getItem(WATCHLIST_DRAFT_KEY);
+
+    if (!savedDraft) {
+      return;
+    }
+
+    try {
+      const parsedDraft = JSON.parse(savedDraft);
+
+      if (Array.isArray(parsedDraft)) {
+        setAssets([
+          ...parsedDraft.slice(0, WATCHLIST_SLOT_COUNT),
+          ...Array(WATCHLIST_SLOT_COUNT).fill(""),
+        ].slice(0, WATCHLIST_SLOT_COUNT));
+      }
+    } catch {
+      sessionStorage.removeItem(WATCHLIST_DRAFT_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -125,11 +156,14 @@ export function WatchlistSetupForm() {
       return;
     }
 
+    if (duplicateAssets.length > 0) {
+      showError(`Remove duplicate symbol${duplicateAssets.length === 1 ? "" : "s"}: ${[...new Set(duplicateAssets)].join(", ")}.`);
+      return;
+    }
+
     setIsValidating(true)
     setErrorMessage("")
     setSuccessMessage("")
-
-    const enteredAssets = assets.filter((asset) => asset.trim() !== "");
 
     try{
       const result = await validate_assets(enteredAssets)
@@ -139,7 +173,16 @@ export function WatchlistSetupForm() {
       }
       showSuccess(result.data?.detail || `Validated ${enteredAssets.length} asset${enteredAssets.length === 1 ? "" : "s"}. Redirecting you now.`);
       await new Promise((resolve) => setTimeout(resolve, REDIRECT_DELAY_MS));
-      window.location.href = "/login";
+
+      sessionStorage.setItem(
+        WATCHLIST_DRAFT_KEY,
+        JSON.stringify(assets.map((asset) => asset.trim()))
+      );
+      sessionStorage.setItem(
+        WATCHLIST_VALIDATED_KEY, 
+        JSON.stringify(result.data.data)
+      )
+      window.location.href = "/watchlist-save";
     }catch{
       showError("Unable to reach the server. Please try again.");
 
@@ -202,61 +245,28 @@ export function WatchlistSetupForm() {
         )}
 
         <FieldGroup className="sentinel-watchlist-slots">
-          <div className="sentinel-watchlist-slot">
-            <Input
-              className="sentinel-watchlist-input"
-              type="text"
-              placeholder="Add Asset"
-              value={assets[0]}
-              onChange={(event) => handleAssetChange(0, event.target.value)}
-            />
-          </div>
-          <div className="sentinel-watchlist-slot">
-            <Input
-              className="sentinel-watchlist-input"
-              type="text"
-              placeholder="Add Asset"
-              value={assets[1]}
-              onChange={(event) => handleAssetChange(1, event.target.value)}
-            />
-          </div>
-          <div className="sentinel-watchlist-slot">
-            <Input
-              className="sentinel-watchlist-input"
-              type="text"
-              placeholder="Add Asset"
-              value={assets[2]}
-              onChange={(event) => handleAssetChange(2, event.target.value)}
-            />
-          </div>
-          <div className="sentinel-watchlist-slot">
-            <Input
-              className="sentinel-watchlist-input"
-              type="text"
-              placeholder="Add Asset"
-              value={assets[3]}
-              onChange={(event) => handleAssetChange(3, event.target.value)}
-            />
-          </div>
-          <div className="sentinel-watchlist-slot">
-            <Input
-              className="sentinel-watchlist-input"
-              type="text"
-              placeholder="Add Asset"
-              value={assets[4]}
-              onChange={(event) => handleAssetChange(4, event.target.value)}
-            />
-          </div>
+          {assets.map((asset, assetIndex) => (
+            <div className="sentinel-watchlist-slot" key={assetIndex}>
+              <Input
+                aria-label={`Watchlist symbol ${assetIndex + 1}`}
+                className="sentinel-watchlist-input"
+                type="text"
+                placeholder="Add Asset"
+                value={asset}
+                onChange={(event) => handleAssetChange(assetIndex, event.target.value)}
+              />
+            </div>
+          ))}
           {<Button className="sentinel-watchlist-primary"
-            onClick={handleValidateAssets} disabled={!hasAtLeastOneAsset}
+            onClick={handleValidateAssets} disabled={isValidating}
           >
 
             {isValidating ? "Validating Assets..." : "Validate Assets"}
           </Button>}
 
         </FieldGroup>
-        <div className={`sentinel-watchlist-signal${hasAtLeastOneAsset ? " is-ready" : ""}`}>
-          {hasAtLeastOneAsset ? "Watchlist ready to validate" : "Waiting for symbols"}
+        <div className={`sentinel-watchlist-signal${hasAtLeastOneAsset && !hasDuplicateAssets ? " is-ready" : ""}${hasDuplicateAssets ? " has-duplicates" : ""}`}>
+          {hasDuplicateAssets ? "Remove duplicate symbols" : hasAtLeastOneAsset ? "Watchlist ready to validate" : "Waiting for symbols"}
         </div>
       </CardContent>
     </Card>

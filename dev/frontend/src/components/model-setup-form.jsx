@@ -1,6 +1,6 @@
 import { Check, ChevronDown, Cpu, ExternalLink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { getAvailableModels, getAvailableProviders, save_api_key} from "@/utilities/api";
+import { getAvailableModels, getAvailableProviders, save_api_key } from "@/utilities/api";
 import {
   Card,
   CardContent,
@@ -42,7 +42,7 @@ const PROVIDER_LOGOS = {
 }
 
 function getProviderLogoConfig(providerName) {
-  return PROVIDER_LOGOS[providerName.toLowerCase()] ?? {
+  return PROVIDER_LOGOS[providerName?.toLowerCase()] ?? {
     logo: openaiLogo,
     providerId: "openai",
     accent: "#6366f1",
@@ -79,6 +79,7 @@ export function ModelSetupForm() {
   }, [])
 
   function showError(message) {
+    setSuccessMessage("")
     setErrorMessage(message)
     setIsErrorFading(false)
 
@@ -118,7 +119,7 @@ export function ModelSetupForm() {
         return;
       }
 
-      if (result.data.providers.length == 0) {
+      if (!result.data?.providers || result.data.providers.length === 0) {
         showError(result.data?.detail || "No available providers at the moment");
         return;
       }
@@ -191,6 +192,11 @@ export function ModelSetupForm() {
   async function handleApiKeySubmit(event) {
     event.preventDefault()
 
+    if (!selectedProvider || !selectedModel) {
+      showError("Choose a provider and model before saving your API key.")
+      return
+    }
+
     if (!apiKey.trim()) {
       showError("Enter your API key before continuing.")
       return
@@ -215,7 +221,7 @@ export function ModelSetupForm() {
       setSuccessMessage(response.data?.detail || "Model connection saved.")
       setApiKey("")
       await new Promise((resolve) => setTimeout(resolve, REDIRECT_DELAY_MS))
-      window.location.href = "/login"
+      window.location.href = "/watchlist-setup"
     } catch {
       showError("Unable to reach the server. Please try again.")
     } finally {
