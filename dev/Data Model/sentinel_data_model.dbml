@@ -1,0 +1,441 @@
+Table users {
+  user_id integer [pk, increment, not null]
+  first_name varchar(100) [not null]
+  last_name varchar(100) [not null]
+  phone_number varchar(20)
+  email varchar(255) [not null, unique]
+  password_hash varchar(255) [not null]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+}
+
+Table user_sessions {
+  session_id integer [pk, increment, not null]
+  user_id integer [not null]
+  session_token_hash varchar(64) [not null, unique]
+  is_active boolean [not null, default: true]
+  expires_on timestamp [not null]
+  created_on timestamp [not null, default: 'now()']
+  last_used_on timestamp
+
+  indexes {
+    user_id
+    expires_on
+  }
+}
+
+Ref: users.user_id < user_sessions.user_id
+
+Table pending_signups {
+  pending_signup_id integer [pk, increment, not null]
+  first_name varchar(100) [not null]
+  last_name varchar(100) [not null]
+  email varchar(255) [not null, unique]
+  password_hash varchar(255) [not null]
+  verification_code_hash varchar(255) [not null]
+  expires_on timestamp [not null]
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    expires_on
+  }
+}
+
+Table model_providers {
+  provider_id integer [pk, increment, not null]
+  provider_name text [not null, unique]
+  pricing_url varchar(1000)
+  is_active boolean [not null, default: true]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+}
+
+Table models {
+  model_id integer [pk, increment, not null]
+  provider_id integer [not null]
+  model_name text [not null]
+  is_active boolean [not null, default: true]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+  
+  indexes {
+    (provider_id, model_name) [unique]
+  }
+}
+
+Ref: model_providers.provider_id < models.provider_id
+
+Table model_config {
+  config_id integer [pk, increment, not null]
+  user_id integer [not null]
+  model_id integer [not null]
+  encrypted_api_key text [not null]
+  api_key_last4 varchar(4)
+  is_active boolean [not null, default: true]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+
+  indexes {
+    (user_id, model_id) [unique]
+  }
+
+  Note: 'PostgreSQL partial unique index required: one active config per user where is_active = true.'
+}
+
+Ref: users.user_id < model_config.user_id
+Ref: models.model_id < model_config.model_id
+
+Table content_sources {
+  source_id integer [pk, increment, not null]
+  source_name varchar(100) [not null, unique]
+  base_url varchar(255) [not null]
+  is_active boolean [not null, default: true]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+}
+
+Table source_preferences {
+  preference_id integer [pk, increment, not null]
+  user_id integer [not null]
+  source_id integer [not null]
+  is_enabled boolean [not null, default: true]
+  trust_score integer [not null, default: 3]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+
+  indexes {
+    (user_id, source_id) [unique]
+  }
+}
+
+Ref: users.user_id < source_preferences.user_id
+Ref: content_sources.source_id < source_preferences.source_id
+
+Table user_content_preferences {
+  preference_id integer [pk, increment, not null]
+  user_id integer [unique, not null]
+  include_filings boolean [not null, default: true]
+  include_earnings_calls boolean [not null, default: true]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+}
+
+Ref: users.user_id - user_content_preferences.user_id
+
+Table assets {
+  asset_id integer [pk, increment, not null]
+  symbol varchar(20) [not null]
+  company_name varchar(100) [not null]
+  legal_entity_name varchar(100)
+  exchange varchar(50)
+  asset_type varchar(50)
+  sector varchar(100)
+  industry varchar(100)
+  currency varchar(10) [not null]
+  is_active boolean [not null, default: true]
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+
+  indexes {
+    (symbol, exchange) [unique]
+  }
+}
+
+Table watchlist {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  asset_id integer [not null]
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (user_id, asset_id) [unique]
+  }
+}
+
+Ref: users.user_id < watchlist.user_id
+Ref: assets.asset_id < watchlist.asset_id
+
+Table articles {
+  article_id integer [pk, increment, not null]
+  source_id integer [not null]
+  title varchar(255) [not null]
+  published_at timestamp [not null]
+  link varchar(1000) [not null, unique]
+  excerpt text
+  content_text text
+  fetched_on timestamp
+  expires_on timestamp
+  created_on timestamp [not null, default: 'now()']
+}
+
+Ref: content_sources.source_id < articles.source_id
+
+Table article_assets {
+  id integer [pk, increment, not null]
+  article_id integer [not null]
+  asset_id integer [not null]
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (article_id, asset_id) [unique]
+  }
+}
+
+Ref: articles.article_id < article_assets.article_id
+Ref: assets.asset_id < article_assets.asset_id
+
+Table filings {
+  filing_id integer [pk, increment, not null]
+  asset_id integer [not null]
+  filing_type varchar(50)
+  link varchar(1000) [not null, unique]
+  filed_on timestamp
+  created_on timestamp [not null, default: 'now()']
+}
+
+Ref: assets.asset_id < filings.asset_id
+
+Table earnings_call {
+  call_id integer [pk, increment, not null]
+  asset_id integer [not null]
+  quarter integer
+  fiscal_year integer
+  transcript_link varchar(1000)
+  call_date timestamp
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (asset_id, quarter, fiscal_year) [unique]
+  }
+}
+
+Ref: assets.asset_id < earnings_call.asset_id
+
+Table reports {
+  report_id integer [pk, increment, not null]
+  user_id integer [not null]
+  asset_id integer [not null]
+  report_date date [not null]
+  lookback_start date [not null]
+  lookback_end date [not null]
+  summary_text text [not null]
+  model_id integer [not null]
+  status varchar(50) [not null, default: 'active']
+  expires_on timestamp
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (user_id, asset_id, report_date) [unique]
+  }
+}
+
+Ref: users.user_id < reports.user_id
+Ref: assets.asset_id < reports.asset_id
+Ref: models.model_id < reports.model_id
+
+Table report_sources {
+  id integer [pk, increment, not null]
+  report_id integer [not null]
+  source_type varchar(50) [not null]
+  source_id integer [not null]
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (report_id, source_type, source_id) [unique]
+  }
+}
+
+Ref: reports.report_id < report_sources.report_id
+
+Table report_source_preferences {
+  id integer [pk, increment, not null]
+  report_id integer [not null]
+  source_id integer [not null]
+  trust_score integer [not null]
+  captured_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (report_id, source_id) [unique]
+  }
+}
+
+Ref: reports.report_id < report_source_preferences.report_id
+Ref: content_sources.source_id < report_source_preferences.source_id
+
+Table report_content_preferences {
+  id integer [pk, increment, not null]
+  report_id integer [unique, not null]
+  include_filings boolean [not null]
+  include_earnings_calls boolean [not null]
+  captured_on timestamp [not null, default: 'now()']
+}
+
+Ref: reports.report_id - report_content_preferences.report_id
+
+Table report_messages {
+  message_id integer [pk, increment, not null]
+  report_id integer [not null]
+  user_id integer [not null]
+  role varchar(50) [not null]
+  message_text text [not null]
+  created_on timestamp [not null, default: 'now()']
+}
+
+Ref: reports.report_id < report_messages.report_id
+Ref: users.user_id < report_messages.user_id
+
+Table report_message_sources {
+  id integer [pk, increment, not null]
+  message_id integer [not null]
+  source_type varchar(50) [not null]
+  source_id integer [not null]
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (message_id, source_type, source_id) [unique]
+  }
+}
+
+Ref: report_messages.message_id < report_message_sources.message_id
+
+Table report_deliveries {
+  delivery_id integer [pk, increment, not null]
+  user_id integer [not null]
+  delivery_date date [not null]
+  sent_to_email varchar(255) [not null]
+  sent_at timestamp
+  delivery_status varchar(50) [not null]
+  error_message text
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (user_id, delivery_date) [unique]
+  }
+}
+
+Ref: users.user_id < report_deliveries.user_id
+
+Table report_delivery_items {
+  id integer [pk, increment, not null]
+  delivery_id integer [not null]
+  report_id integer [not null]
+  created_on timestamp [not null, default: 'now()']
+
+  indexes {
+    (delivery_id, report_id) [unique]
+  }
+}
+
+Ref: report_deliveries.delivery_id < report_delivery_items.delivery_id
+Ref: reports.report_id < report_delivery_items.report_id
+
+Table price_performance_metrics {
+  id integer [pk, increment, not null]
+  asset_id integer [not null]
+  current_price numeric(18,4)
+  d1_return numeric(10,6)
+  w1_return numeric(10,6)
+  m1_return numeric(10,6)
+  ytd_return numeric(10,6)
+  y1_return numeric(10,6)
+  all_time_high_distance numeric(10,6)
+  snapdate date [not null]
+  as_of timestamp [default: 'now()']
+
+  indexes {
+    (asset_id, snapdate) [unique]
+  }
+}
+
+Ref: assets.asset_id < price_performance_metrics.asset_id
+
+Table risk_metrics {
+  id integer [pk, increment, not null]
+  asset_id integer [not null]
+  volatility numeric(10,6)
+  beta numeric(10,6)
+  maximum_drawdown numeric(10,6)
+  sharpe_ratio numeric(10,6)
+  snapdate date [not null]
+  as_of timestamp [default: 'now()']
+
+  indexes {
+    (asset_id, snapdate) [unique]
+  }
+}
+
+Ref: assets.asset_id < risk_metrics.asset_id
+
+Table valuation_metrics {
+  id integer [pk, increment, not null]
+  asset_id integer [not null]
+  market_cap numeric(24,2)
+  price_to_earnings numeric(14,6)
+  forward_price_to_earnings numeric(14,6)
+  price_to_sales numeric(14,6)
+  price_to_book numeric(14,6)
+  snapdate date [not null]
+  as_of timestamp [default: 'now()']
+
+  indexes {
+    (asset_id, snapdate) [unique]
+  }
+}
+
+Ref: assets.asset_id < valuation_metrics.asset_id
+
+Table asset_health {
+  id integer [pk, increment, not null]
+  asset_id integer [not null]
+  revenue numeric(24,2)
+  revenue_growth numeric(10,6)
+  earnings_per_share numeric(18,4)
+  gross_margin numeric(10,6)
+  operating_margin numeric(10,6)
+  net_margin numeric(10,6)
+  free_cash_flow numeric(24,2)
+  debt_to_equity numeric(14,6)
+  snapdate date [not null]
+  as_of timestamp [default: 'now()']
+
+  indexes {
+    (asset_id, snapdate) [unique]
+  }
+}
+
+Ref: assets.asset_id < asset_health.asset_id
+
+Table alternative_metrics {
+  id integer [pk, increment, not null]
+  asset_id integer [not null]
+  avg_narrative_sentiment numeric(10,6)
+  agg_level text
+  binary_sentiment_flag integer
+  analyst_sentiment_flag integer
+  snapdate date [not null]
+  as_of timestamp [default: 'now()']
+
+  indexes {
+    (asset_id, snapdate) [unique]
+  }
+}
+
+Ref: assets.asset_id < alternative_metrics.asset_id
+
+Table asset_events {
+  event_id integer [pk, increment, not null]
+  asset_id integer [not null]
+  event_type varchar(50) [not null]
+  title varchar(255) [not null]
+  event_date date [not null]
+  status varchar(50) [not null, default: 'upcoming']
+  created_on timestamp [not null, default: 'now()']
+  last_updated timestamp [not null, default: 'now()']
+
+  indexes {
+    (asset_id, event_date)
+    (event_type, event_date)
+  }
+}
+
+Ref: assets.asset_id < asset_events.asset_id
